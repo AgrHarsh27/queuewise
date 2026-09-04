@@ -348,20 +348,27 @@ def health():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.get_json() or {}
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
+    try:
+        data = request.get_json() or {}
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
 
-    if not email or not password:
-        return jsonify({'error': {'reason': 'Invalid request input.'}}), 400
+        if not email or not password:
+            return jsonify({'error': {'reason': 'Invalid request input.'}}), 400
 
-    user = User.query.filter_by(email=email).first()
-    if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
-        return jsonify({'error': {'reason': 'Invalid email or password.'}}), 401
+        user = User.query.filter_by(email=email).first()
+        if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+            return jsonify({'error': {'reason': 'Invalid email or password.'}}), 401
 
-    safe_user = user.to_safe_dict()
-    token = jwt.encode({**safe_user, 'exp': datetime.now(timezone.utc) + timedelta(hours=8)}, JWT_SECRET, algorithm='HS256')
-    return jsonify({'token': token, 'user': safe_user})
+        safe_user = user.to_safe_dict()
+        token = jwt.encode({**safe_user, 'exp': datetime.now(timezone.utc) + timedelta(hours=8)}, JWT_SECRET, algorithm='HS256')
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
+        return jsonify({'token': token, 'user': safe_user})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': {'reason': f"Server error: {str(e)}"}}), 500
 
 @app.route('/api/users', methods=['GET'])
 @protected_route
@@ -907,8 +914,46 @@ def dashboard_resolved_per_week():
             'count': cnt
         })
 
+def auto_seed_db():
+    try:
+        db.create_all()
+        if User.query.first() is None:
+            pw_hash = bcrypt.hashpw('password'.encode('utf-8'), bcrypt.gensalt(12)).decode('utf-8')
+            maya = User(id=str(uuid.uuid4()), name='Maya Chen', email='maya@queuewise.co', password_hash=pw_hash, role='supervisor')
+            jordan = User(id=str(uuid.uuid4()), name='Jordan Lee', email='jordan@queuewise.co', password_hash=pw_hash, role='agent')
+            sam = User(id=str(uuid.uuid4()), name='Sam Rivera', email='sam@queuewise.co', password_hash=pw_hash, role='agent')
+            priya = User(id=str(uuid.uuid4()), name='Priya Patel', email='priya@queuewise.co', password_hash=pw_hash, role='agent')
+            db.session.add_all([maya, jordan, sam, priya])
+            db.session.commit()
+
+            t1 = Ticket(
+                id=str(uuid.uuid4()),
+                subject='Unable to access dashboard reporting',
+                description='Customer reports 403 Forbidden error when trying to view weekly SLA reports.',
+                requester='alex@acme.com',
+                priority='High',
+                category='Access Issue',
+                status='New',
+                primary_assignee_id=jordan.id
+            )
+            t2 = Ticket(
+                id=str(uuid.uuid4()),
+                subject='Password reset email not received',
+                description='User requested password reset link 30 minutes ago, no email received.',
+                requester='sarah@techcorp.io',
+                priority='Urgent',
+                category='Authentication',
+                status='Open',
+                primary_assignee_id=sam.id
+            )
+            db.session.add_all([t1, t2])
+            db.session.commit()
+            print("Database automatically seeded with demo users!")
+    except Exception as err:
+        print("Auto seed error/warning:", err)
+
 with app.app_context():
-    db.create_all()
+    auto_seed_db()
 
 if __name__ == '__main__':
     print(f"Queuewise Flask API listening on port {PORT}")
