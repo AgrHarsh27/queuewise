@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+Frontend/node_modules/
+
+# Production builds
+dist/
+Frontend/dist/
+build/
+
+# Environment variables
+.env
+*.env
+Backend/.env
+
+# Python / Cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.vite/
+*.tsbuildinfo
