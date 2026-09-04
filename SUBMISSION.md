@@ -3,12 +3,14 @@
 ## Links
 
 - **GitHub repository:** `https://github.com/AgrHarsh27/queuewise`
-- **Live application:** `https://queuewise-rho.vercel.app` (Backend hosted on Render with Neon PostgreSQL)
+- **Live Frontend Application:** `https://queuewise-rho.vercel.app`
+- **Live Backend API:** `https://queuewise-api-vr47.onrender.com/api`
 
 ## Notes for the reviewer
 
-- The Python Flask backend server runs on `http://localhost:4000/api` (`app.py`) and the React frontend runs on `http://localhost:5173`.
-- Demo users and initial ticket conversations covering all priorities, statuses, SLA alert conditions, and history are seeded into PostgreSQL via `python seed.py`.
+- **Production Deployment:** The React frontend is deployed on **Vercel** (`https://queuewise-rho.vercel.app`) and connects to the Python Flask API hosted on **Render** (`https://queuewise-api-vr47.onrender.com/api`) with a managed **Neon PostgreSQL** database.
+- **Local Development:** The local Python Flask backend runs on `http://localhost:4000/api` (`app.py`) and the React frontend runs on `http://localhost:5173`.
+- Demo users and initial ticket conversations covering all priorities, statuses, SLA alert conditions, and audit history are automatically seeded into PostgreSQL on startup.
 - Password for all demo accounts is **`password`**.
 
 ## Demo credentials

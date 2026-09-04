@@ -1,7 +1,7 @@
 import type { Alert, BulkResult, DashboardData, Status, Ticket, TicketPage, TicketQuery, User } from './types';
 
 const getApiUrl = () => {
-    let url = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:4000/api';
+    let url = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'https://queuewise-api-vr47.onrender.com/api';
     url = url.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
 };
