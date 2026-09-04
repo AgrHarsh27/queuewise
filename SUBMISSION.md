@@ -2,8 +2,8 @@
 
 ## Links
 
-- **GitHub repository:** `https://github.com/sejal/queuewise-support-ticketing`
-- **Live application:** `http://localhost:5173` (Local Dev Environment) / `https://queuewise-support.vercel.app`
+- **GitHub repository:** `https://github.com/AgrHarsh27/queuewise`
+- **Live application:** `https://queuewise-rho.vercel.app` (Backend hosted on Render with Neon PostgreSQL)
 
 ## Notes for the reviewer
 
@@ -27,7 +27,7 @@
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Recharts, Lucide Icons | Fast component rendering, strong type safety, responsive modern design, interactive data visualization for SLA charts. |
 | **Backend** | Python 3, Flask, SQLAlchemy, PyJWT, bcrypt, psycopg2-binary | Clean Python WSGI REST framework, robust object-relational mapping via SQLAlchemy, stateless PyJWT auth, and secure bcrypt password verification. |
 | **Database** | PostgreSQL | Relational ACID compliance, robust indexing on enum columns and foreign keys, transaction support for status transitions and immutable audit logs. |
-| **Hosting** | Local Python Flask + Vite (Ready for Render & Vercel deployment) | Zero-overhead local development environment with isolated environment variables and WSGI process management. |
+| **Hosting** | Vercel (Frontend React app) + Render (Flask Gunicorn API) + Neon (PostgreSQL Database) | Fully deployed production serverless frontend & cloud API with automated CI/CD and managed cloud database. |
 
 ## Goal checklist
 
