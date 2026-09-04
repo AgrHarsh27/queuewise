@@ -1,4 +1,10 @@
-# Assignment 04 — Support Ticketing
+# Assignment 04 — Support Ticketing (Queuewise)
+
+- **Live Application (Vercel):** `https://queuewise-rho.vercel.app`
+- **Live API Backend (Render):** `https://queuewise-api-vr47.onrender.com/api`
+- **GitHub Repository:** `https://github.com/AgrHarsh27/queuewise`
+
+---
 
 ## The scenario
 
