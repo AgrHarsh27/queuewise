@@ -1,6 +1,11 @@
 import type { Alert, BulkResult, DashboardData, Status, Ticket, TicketPage, TicketQuery, User } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
+const getApiUrl = () => {
+    let url = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:4000/api';
+    url = url.replace(/\/$/, '');
+    return url.endsWith('/api') ? url : `${url}/api`;
+};
+const API_URL = getApiUrl();
 const token = () => localStorage.getItem('qw-token');
 const request = async <T>(path: string, init: RequestInit = {}): Promise<T> => {
     const headers = new Headers(init.headers);
