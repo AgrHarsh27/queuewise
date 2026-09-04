@@ -21,6 +21,9 @@ db_url = os.getenv('DATABASE_URL')
 if not db_url:
     db_url = "postgresql://postgres:postgres@localhost:5432/queuewise"
 else:
+    # Render uses postgres:// but SQLAlchemy needs postgresql://
+    if db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
     if '?schema=' in db_url:
         db_url = db_url.split('?schema=')[0]
     elif '&schema=' in db_url:
