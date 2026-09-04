@@ -1,6 +1,6 @@
 # AI Prompts & Workflow Log
 
-This document records the master prompt workflows used during the development of Queuewise, including the original prompts for generating the frontend and backend, the transition to Python Flask, and all subsequent refinement prompts and manual corrections.
+This document records the master prompt workflows used during the development of Queuewise, including the prompts for generating the frontend, backend, database schema, and deployment setup.
 
 ---
 
@@ -26,17 +26,17 @@ This document records the master prompt workflows used during the development of
 - Role-aware UI components with inline error banners, multi-filter queue tables, bulk selection action bars, SLA breach counters, and ticket event timelines.
 
 ### What was corrected / refined
-- **API URL Fallback**: Configured `VITE_API_URL` handling to ensure live production deployments on Vercel seamlessly route requests to the live Render backend (`https://queuewise-api-vr47.onrender.com/api`).
-- **Build Script Alignment**: Updated `Frontend/package.json` build command to `vite build` and untracked `node_modules` from Git to eliminate Linux permission errors on Vercel.
+- **API URL Fallback**: Configured `VITE_API_URL` handling to default to the live Render backend (`https://queuewise-api-vr47.onrender.com/api`).
+- **Build Script Alignment**: Updated `Frontend/package.json` build command to `vite build` and untracked `node_modules` from Git to ensure clean Vercel deployments.
 
 ---
 
-## 2. Master Backend Generation Prompt (Node/Express → Python Flask Migration)
+## 2. Master Backend Generation Prompt (Python Flask + PostgreSQL)
 
-### Original Specification Prompt
-> "Build the backend API for a support ticketing app — a shared queue replacing a group email inbox. Node.js + Express, TypeScript, PostgreSQL, Prisma, JWT auth + bcrypt. Config via env vars only, single seed script, deployable to a free host.
+### Prompt
+> "Build the backend API for a support ticketing app — a shared queue replacing a group email inbox. Python 3 + Flask REST API, SQLAlchemy ORM, PostgreSQL, PyJWT auth + bcrypt. Config via env vars only (`DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`), single script with auto-seeding on startup, deployable to Render with Gunicorn.
 > 
-> Data model: users (id, name, email, password_hash, role: agent|supervisor), tickets (subject, description, requester, priority, category, status, primary_assignee_id, timestamps, archived_at), ticket_collaborators (many-to-many), replies (ticket_id, author_id, body, is_internal, created_at), ticket_events (append-only: ticket_id, type: status_change|reassignment|reply, actor_id, old_value, new_value, created_at) as the audit timeline, and sla_alerts (ticket_id, breached_at, acknowledged_at, acknowledged_by). Document which relations are 1:many vs many:many, what's a DB constraint vs app-level rule, and anything denormalized.
+> Data model: users (id, name, email, password_hash, role: agent|supervisor), tickets (subject, description, requester, priority, category, status, primary_assignee_id, timestamps, archived_at, pending_started_at, pending_seconds), ticket_collaborators (many-to-many), replies (ticket_id, author_id, body, is_internal, created_at), ticket_events (append-only: ticket_id, type: status_change|reassignment|reply, actor_id, old_value, new_value, created_at) as the audit timeline, and sla_alerts (ticket_id, breached_at, acknowledged_at, acknowledged_by). Document which relations are 1:many vs many:many, what's a DB constraint vs app-level rule, and anything denormalized.
 > 
 > Auth & roles — enforce server-side, never trust the client:
 > - POST /api/auth/login → JWT with user id + role.
@@ -52,7 +52,7 @@ This document records the master prompt workflows used during the development of
 > - Enforce New→Open→Pending→Resolved→Closed only. Reopen from Closed allowed only within a fixed window after closing; reject after that, even for supervisors.
 > - POST /api/tickets/:id/status validates the move and rejects invalid ones with a specific reason (not a generic error).
 > - Every successful transition writes an immutable ticket_events row — no PATCH/DELETE route for events, ever, for anyone.
-> - Response clock: target time derived from priority. Clock runs in New/Open, pauses while Pending (store when Pending started, exclude that span from elapsed time), and a customer reply while Pending moves the ticket back to Open and resumes the clock. Document how a 'customer reply' is distinguished from an agent reply. Expose computed elapsed/remaining time on ticket reads, don't make the client derive it.
+> - Response clock: target time derived from priority (Urgent: 60m, High: 240m, Normal: 480m, Low: 1440m). Clock runs in New/Open, pauses while Pending (store when Pending started, exclude that span from elapsed time), and a customer reply while Pending moves the ticket back to Open and resumes the clock. Expose computed elapsed/remaining time on ticket reads, don't make the client derive it.
 > 
 > Collaborators: add/remove endpoints; collaborators can reply/update like the primary assignee. GET /api/tickets/mine — everything where the user is primary assignee or collaborator.
 > 
@@ -75,18 +75,15 @@ This document records the master prompt workflows used during the development of
 > - POST /api/alerts/:id/acknowledge — only the ticket's assignee may acknowledge (403 otherwise).
 > - A ticket reopened and re-breaching must produce a new active alert, not stay silently suppressed by an old acknowledgment.
 > 
-> Cross-cutting: validate all input, consistent 400 error shapes, wrap multi-table writes in transactions. Seed script: both roles, several agents, tickets across every status/priority including some already breaching and some pending, enough replies/history to populate the dashboard and timelines on first load."
-
-### Flask Migration Prompt & Refinement
-> "Migrate the backend API from Node.js/Express/Prisma to a production-grade Python 3 Flask REST backend (`Backend/app.py`) using SQLAlchemy ORM, PyJWT, bcrypt, and psycopg2 for PostgreSQL compatibility. Preserve 100% contract compatibility with the React frontend and test suite. Implement `@protected_route` and `@supervisor_only` decorators, transactional `db.session` operations for state machine transitions and audit events, auto-seeding on startup if tables are empty, and robust DATABASE_URL formatting for Render & Neon PostgreSQL hosting."
+> Cross-cutting: validate all input, consistent 400 error shapes, wrap multi-table writes in transactions. Auto-seed: both roles, several agents, tickets across every status/priority including some already breaching and some pending, enough replies/history to populate the dashboard and timelines on first load."
 
 ### What was produced
-- Complete Python Flask application (`Backend/app.py`) matching all required routes, data structures, authorization rules, and SLA tracking math.
+- Complete Python Flask application (`Backend/app.py`) matching all required routes, data structures, authorization decorators (`@protected_route`, `@supervisor_only`), and SLA tracking logic.
 - Automatic database table creation (`db.create_all()`) and auto-seeding (`auto_seed_db()`) on startup when deployed with Gunicorn on Render.
 
-### What was corrected
-- **Render PostgreSQL URL Conversion**: Added runtime URL parsing in `app.py` to automatically convert Render's `postgres://` prefix to `postgresql://` and strip `?schema=` parameters.
-- **PyJWT Encoding Compatibility**: Added `isinstance(token, bytes)` decoding check in `/api/auth/login` to ensure PyJWT tokens serialize cleanly to JSON string format without throwing 500 errors on Python 3.11.
+### What was corrected / refined
+- **Render PostgreSQL Connection Parsing**: Added runtime URL parsing in `app.py` to automatically convert Render/Neon `postgres://` to `postgresql://` and strip `?schema=` query parameters.
+- **PyJWT Encoding Compatibility**: Handled PyJWT token bytes decoding in `/api/auth/login` to prevent JSON serialization errors on Python 3.11.
 
 ---
 

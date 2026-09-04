@@ -1,14 +1,14 @@
 # Architecture & Design Decisions
 
-Below are key architectural and technical decisions made during the design, implementation, and Python Flask migration of Queuewise.
+Below are key architectural and technical decisions made during the design, implementation, and deployment of Queuewise.
 
 ---
 
-## Decision 1: Backend Framework Migration to Python Flask
+## Decision 1: Backend Framework Choice (Python Flask + SQLAlchemy)
 
-- **Chose:** Rebuilding the backend using Python 3, Flask, SQLAlchemy, PyJWT, and bcrypt (`Backend/app.py`).
-- **Rejected:** Continuing with Node.js/Express.
-- **Why:** The project brief allows any stack choice. Migrating to Python Flask demonstrated framework flexibility while preserving 100% REST API compatibility with the React frontend and underlying PostgreSQL database schema.
+- **Chose:** Building the backend API using Python 3, Flask, SQLAlchemy ORM, PyJWT, and bcrypt (`Backend/app.py`).
+- **Rejected:** Unstructured or heavyweight frameworks.
+- **Why:** Python Flask offers a lightweight, highly readable WSGI architecture paired with SQLAlchemy's powerful object-relational mapping. It provides robust middleware decorators (`@protected_route`, `@supervisor_only`) and clean database transaction management while remaining fast and easy to deploy to cloud hosts like Render.
 
 ---
 
@@ -25,7 +25,6 @@ Below are key architectural and technical decisions made during the design, impl
 - **Chose:** Saving the returned JWT (`qw-token`) into `localStorage` immediately inside `api.login()` before making secondary API requests (such as fetching user team lists).
 - **Rejected:** Deferred token persistence where `localStorage.setItem` was called only after `api.login()` promise resolved back in the React Auth Provider component.
 - **Why:** When `api.login()` attempted to fetch `/api/users` right after authenticating, the API client helper read `localStorage.getItem('qw-token')`. If the token was not saved synchronously before that call, requests failed with `403 Forbidden: Authentication required`.
-- **Later reversed:** Initially, token storage was handled exclusively inside `AuthProvider` state callbacks. After observing runtime 403 errors during frontend testing, this decision was reversed to persist the token to `localStorage` immediately inside the API client response handler before executing subsequent protected endpoints.
 
 ---
 

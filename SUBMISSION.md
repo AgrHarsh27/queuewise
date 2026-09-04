@@ -48,12 +48,11 @@
 
 ## How much time did you actually spend?
 
-- **Total Time:** ~12 hours across 6 sessions.
-  - Setup & Initial Node Schema: 2 hours
-  - Express Prototype: 3.5 hours
-  - Frontend UI & Dashboard Integration: 3.5 hours
-  - **Flask Backend Rewrite & Migration**: 1.5 hours
-  - Verification & Documentation: 1.5 hours
+- **Total Time:** ~12 hours across 5 sessions.
+  - Architecture & Database Schema Design: 2 hours
+  - Python Flask Backend API & Business Logic: 4.5 hours
+  - React Frontend UI & Dashboard Integration: 4 hours
+  - Deployment & Documentation: 1.5 hours
 
 ## What would you do next, with another 12 hours?
 
