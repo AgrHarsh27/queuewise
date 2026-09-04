@@ -1,0 +1,12 @@
+export type Role = 'agent' | 'supervisor';
+export type Status = 'New' | 'Open' | 'Pending' | 'Resolved' | 'Closed';
+export type Priority = 'Urgent' | 'High' | 'Normal' | 'Low';
+export type Ticket = { id: string; subject: string; description: string; requester: string; requesterEmail: string; priority: Priority; category: string; status: Status; assignee: string; assigneeId: string; collaborators: string[]; updatedAt: string; createdAt: string; slaMinutes: number; slaStartedAt: string; replies: Reply[]; activity: Activity[]; archived?: boolean };
+export type Reply = { id: string; author: string; body: string; timestamp: string; internal: boolean };
+export type Activity = { id: string; type: 'status' | 'assignment' | 'reply'; text: string; timestamp: string; actor: string };
+export type User = { id: string; name: string; role: Role; email: string };
+export type TicketQuery = { q?: string; status?: string; priority?: string; category?: string; assignee?: string; sort?: string; page?: number; includeArchived?: boolean };
+export type TicketPage = { results: Ticket[]; total: number; page: number; pageSize: number };
+export type BulkResult = { id: string; subject: string; succeeded: boolean; reason?: string };
+export type DashboardData = { stats: { open: number; pending: number; resolved: number; breaching: number }; status: { name: string; value: number }[]; agents: { name: string; value: number }[]; resolved: { week: string; value: number }[] };
+export type Alert = { id: string; subject: string; assignee: string; assigneeId: string; minutes: number; severity: 'breaching' | 'at-risk' };

@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  agent
+  supervisor
+}
+enum Priority {
+  Urgent
+  High
+  Normal
+  Low
+}
+enum Status {
+  New
+  Open
+  Pending
+  Resolved
+  Closed
+}
+enum EventType {
+  status_change
+  reassignment
+  reply
+}
+
+model User {
+  id              String              @id @default(uuid())
+  name            String
+  email           String              @unique
+  passwordHash    String              @map("password_hash")
+  role            Role                @default(agent)
+  assignedTickets Ticket[]            @relation("primary_assignee")
+  collaborations  TicketCollaborator[]
+  replies         Reply[]
+  events          TicketEvent[]
+  acknowledged    SlaAlert[]           @relation("acknowledger")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  @@map("users")
+}
+
+model Ticket {
+  id                String               @id @default(uuid())
+  subject           String
+  description       String
+  requester         String
+  priority          Priority             @default(Normal)
+  category          String
+  status            Status               @default(New)
+  primaryAssigneeId String?              @map("primary_assignee_id")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  archivedAt        DateTime?            @map("archived_at")
+  closedAt          DateTime?            @map("closed_at")
+  pendingStartedAt  DateTime?            @map("pending_started_at")
+  pendingSeconds    Int                  @default(0) @map("pending_seconds")
+  primaryAssignee   User?                @relation("primary_assignee", fields: [primaryAssigneeId], references: [id])
+  collaborators     TicketCollaborator[]
+  replies           Reply[]
+  events            TicketEvent[]
+  slaAlerts         SlaAlert[]
+  @@index([archivedAt])
+  @@index([primaryAssigneeId])
+  @@map("tickets")
+}
+
+model TicketCollaborator {
+  ticketId  String @map("ticket_id")
+  userId    String @map("user_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([ticketId, userId])
+  @@map("ticket_collaborators")
+}
+
+model Reply {
+  id         String   @id @default(uuid())
+  ticketId   String   @map("ticket_id")
+  authorId   String   @map("author_id")
+  body       String
+  isInternal Boolean  @default(false) @map("is_internal")
+  createdAt  DateTime @default(now()) @map("created_at")
+  ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author     User @relation(fields: [authorId], references: [id])
+  @@index([ticketId, createdAt])
+  @@map("replies")
+}
+
+model TicketEvent {
+  id        String @id @default(uuid())
+  ticketId  String @map("ticket_id")
+  type      EventType
+  actorId   String @map("actor_id")
+  oldValue  String? @map("old_value")
+  newValue  String? @map("new_value")
+  createdAt DateTime @default(now()) @map("created_at")
+  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor     User @relation(fields: [actorId], references: [id])
+  @@index([ticketId, createdAt])
+  @@map("ticket_events")
+}
+
+model SlaAlert {
+  id             String   @id @default(uuid())
+  ticketId       String   @map("ticket_id")
+  breachedAt     DateTime @map("breached_at")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+  acknowledgedBy String? @map("acknowledged_by")
+  ticket         Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  acknowledger   User? @relation("acknowledger", fields: [acknowledgedBy], references: [id])
+  @@index([acknowledgedAt, breachedAt])
+  @@map("sla_alerts")
+}
